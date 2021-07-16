@@ -38,8 +38,8 @@ function makeResponsive() {
     d3.select(".chart").append("div").attr("class", "tooltip").style("opacity", 0);
 
     // Retrieve data from the CSV file and execute everything below
-    d3.csv("data/data.csv", function(err, six_five_data) {
-    if (err) throw err;
+    d3.csv("/assets/data/data.csv").then(function(six_five_data) {
+    // if (err) throw err;
     
     six_five_data.forEach(function(data) {
         data.allTeethRemoved = +data.allTeethRemoved;
