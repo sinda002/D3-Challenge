@@ -1,369 +1,138 @@
-// D3 Scatter plot
-
-// When the browser window is resized, responsify() is called.
-d3.select(window).on('resize', makeResponsive);
-
-// When the browser loads, makeResponsive() is called.
-makeResponsive();
-
-// The code for the chart is wrapped inside a function that automatically resizes the chart
 function makeResponsive() {
-    var svgArea = d3.select('body').select('svg');
+    // if the SVG area isn't empty when the browser loads,
+    // remove it and replace it with a resized version of the chart
+    var svgArea = d3.select("#scatter").select("svg");
+  
+    // clear svg is not empty
     if (!svgArea.empty()) {
-        svgArea.remove();
+      svgArea.remove();
     }
-
-    // SVG wrapper dimensions are determined by the current width and height of the browser window.
-    var svgWidth = window.innerWidth;
-    var svgHeight = window.innerHeight;
-
-    var margin = { top: 20, right: 150, bottom: 100, left: 130 };
-
+  
+    // SVG wrapper dimensions are determined by the current width and
+    // height of the browser window.
+    // var svgWidth = window.innerWidth;
+    // var svgHeight = window.innerHeight;
+  
+    var svgWidth = 960;
+    var svgHeight = 500;
+  
+    var margin = {
+      top: 20,
+      right: 40,
+      bottom: 60,
+      left: 100
+  };
+  
     var width = svgWidth - margin.left - margin.right;
     var height = svgHeight - margin.top - margin.bottom;
-
-    
-    var svg = d3
-        .select('.chart')
-        .append('svg')
-        .attr('height', svgHeight)
-        .attr('width', svgWidth)
-        .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-
-    // Append an SVG group
-    var chart = svg.append("g");
-
-    // Append a div to the body to create tooltips, assign it a class
-    d3.select(".chart").append("div").attr("class", "tooltip").style("opacity", 0);
-
-    // Retrieve data from the CSV file and execute everything below
-    d3.csv("/assets/data/data.csv").then(function(six_five_data) {
-    // if (err) throw err;
-    
-    six_five_data.forEach(function(data) {
-        data.allTeethRemoved = +data.allTeethRemoved;
-        data.bachelorOrHigher = +data.bachelorOrHigher;
-        data.white = +data.white;
-        data.skinCancer = +data.skinCancer;
-        data.foodStamp = +data.foodStamp;
-        data.smoke = +data.smoke;
-    });
-
-    // Create scale functions
-    var yLinearScale = d3.scaleLinear().range([height, 0]);
-    var xLinearScale = d3.scaleLinear().range([0, width]);
-
-    // Create axis functions
-    var bottomAxis = d3.axisBottom(xLinearScale);
-    var leftAxis = d3.axisLeft(yLinearScale);
-
-    // These variables store the minimum and maximum values in a column in data.csv
-    var xMin;
-    var xMax;
-    var yMin;
-    var yMax;
-
-    // This function identifies the minimum and maximum values in a column in data.csv
-    // and assign them to xMin, xMax, yMin, yMax variables, which will define the axis domain
-    function findMinAndMax(dataColumnX, dataColumnY) {
-        xMin = d3.min(six_five_data, function(data) {
-        return +data[dataColumnX] * 0.8;
-        });
-
-        xMax = d3.max(six_five_data, function(data) {
-        return +data[dataColumnX] * 1.1;
-        });
-
-        yMin = d3.min(six_five_data, function(data) {
-        return +data[dataColumnY] * 0.8;
-        });
-
-        yMax = d3.max(six_five_data, function(data) {
-        return +data[dataColumnY] * 1.1;
-        });
-    }
-
-    // The default x-axis is 'bachelorOrHigher'
-    // Other axises assigned to the variable during an onclick event.
-    // This variable is key to the ability to change axis/data column
-    var currentAxisLabelX = "bachelorOrHigher";
-    var currentAxisLabelY = "allTeethRemoved";
-    
-    // Call findMinAndMax() with 'bachelorOrHigher' as default
-    findMinAndMax(currentAxisLabelX, currentAxisLabelY);
-
-    // Set the domain of an axis to extend from the min to the max value of the data column
-    xLinearScale.domain([xMin, xMax]);
-    yLinearScale.domain([yMin, yMax]);
-
-    // Initialize tooltip
-    var toolTip = d3
-        .tip()
-        .attr("class", "d3-tip")
-        // Define position
-        .offset([0, 0])
-        // The html() method allows us to mix JavaScript with HTML in the callback function
-        .html(function(data) {
-        var states = data.geography;
-        var valueX = +data[currentAxisLabelX];
-        var valueY = +data[currentAxisLabelY];
-        var stringX;
-        var stringY;
-        
-        // Tooltip text depends on which axis is active/has been clicked
-        if (currentAxisLabelX === "bachelorOrHigher") {
-            stringX = "Bachelor: ";
-            stringY = "No Teeth: ";
-        }
-        else if (currentAxisLabelX === "white") {
-            stringX = "White People: ";
-            stringY = "Skin Cancer: ";
-        }
-        else {
-            stringX = "Food Stamp: "
-            stringY = "Smoker: ";
-        }
-        return states +
-            "<br>" +
-            stringX +
-            valueX +
-            "<br>" +
-            stringY +
-            valueY;
-        });
-        
-    // Create tooltip
-    chart.call(toolTip);
-    
-    // Create circle
-    chart
-        .selectAll("circle")
-        .data(six_five_data)
-        .enter()
-        .append("circle")
-        .attr("cx", function(data, index) {
-        return xLinearScale(+data[currentAxisLabelX]);
-        })
-        .attr("cy", function(data, index) {
-        return yLinearScale(+data[currentAxisLabelY]);
-        })
-        .attr("r", "18")
-        .attr("fill", "lightblue")
-        .attr("class", "circle")
-        // display tooltip by d3-Tip
-        .on('mouseover', toolTip.show)
-        .on('mouseout', toolTip.hide);
-    
-    // Create abbrivation of states to show on the circle
-    chart
-        .selectAll("text")
-        .data(six_five_data)
-        .enter()
-        .append("text")
-        .attr("x", function(data, index) {
-          return xLinearScale(+data[currentAxisLabelX]);
-        })
-        .attr("y", function(data, index) {
-          return yLinearScale(+data[currentAxisLabelY]);
-        })
-        .attr("dx", "-0.65em")
-        .attr("dy", "0.4em")
-        .style("font-size", "13px")
-        .style("fill", "white")
-        .attr("class", "abbr")
-        .text(function(data, index) {
-          return data.abbr;
-        });
-
-    // Append an SVG group for the x-axis, then display the x-axis
-    chart
-        .append("g")
-        .attr("transform", "translate(0," + height + ")")
-        // The class name assigned here will be used for transition effects
-        .attr("class", "x-axis")
+  
+  // Create an SVG wrapper, append an SVG group that will hold our chart, and shift the latter by left and top margins.
+  
+    var svg = d3.select("#scatter")
+      .append("svg")
+      .attr("width", svgWidth)
+      .attr("height", svgHeight);
+  
+    var chartGroup = svg.append("g")
+      .attr("transform", `translate(${margin.left}, ${margin.top})`);
+  
+    // Import Data
+    d3.csv("/assets/data/data.csv").then(function(features) {
+  
+      // Step 1: Parse Data/Cast as numbers
+      // ==============================
+      features.forEach(function(data) {
+        data.poverty = +data.poverty;
+        data.healthcare = +data.healthcare;
+        data.age = +data.age;
+        data.smokes = +data.smokes;
+        data.abbr = +data.abbr;
+  
+      });
+  
+      // Step 2: Create scale functions
+      // ==============================
+      var xLinearScale = d3.scaleLinear()
+        // .domain([8, d3.max(features, d => d.poverty)])
+        .domain([d3.min(features, d => d.poverty), d3.max(features, d => d.poverty)])
+        .range([0, width]);
+  
+      var yLinearScale = d3.scaleLinear()
+        // .domain([4, d3.max(features, d => d.healthcare)])
+        .domain([d3.min(features, d => d.healthcare), d3.max(features, d => d.healthcare)])
+        .range([height, 0]);
+  
+      // Step 3: Create axis functions
+      // ==============================
+      var bottomAxis = d3.axisBottom(xLinearScale);
+      var leftAxis = d3.axisLeft(yLinearScale);
+  
+      // Step 4: Append Axes to the chart
+      // ==============================
+      chartGroup.append("g")
+        .attr("transform", `translate(0, ${height})`)
         .call(bottomAxis);
-
-    // Append a group for y-axis, then display it
-    chart
-        .append("g")
-        .attr("class", "y-axis")
+  
+      chartGroup.append("g")
         .call(leftAxis);
-
-    // Append y-axis label
-    chart
-        .append("text")
+  
+       // Step 5: Create Circles
+      // ==============================
+      var circlesGroup = chartGroup.selectAll("circle")
+      .data(features)
+      .enter()
+      .append("circle")
+      .attr("cx", d => xLinearScale(d.poverty))
+      .attr("cy", d => yLinearScale(d.healthcare))
+      // .attr("cz", d => yLinearScale(d.abbr))
+      .attr("r", "15")
+      .attr("fill", "lightblue")
+      .attr("opacity", ".5");
+  
+      // Create axes labels
+      chartGroup.append("text")
         .attr("transform", "rotate(-90)")
-        .attr("y", 0 - margin.left + 80)
-        .attr("x", 0 - height / 2)
+        .attr("y", 0 - margin.left)
+        .attr("x", 0 - (height / 2))
         .attr("dy", "1em")
-        .attr("class", "axis-text change")
-        .attr("data-axis-name", "allTeethRemoved")
-        .attr("id", "allTeethRemoved")
-        .text("65+ with All Teeth Removed (%)");
-
-    chart
-        .append("text")
-        .attr("transform", "rotate(-90)")
-        .attr("y", 0 - margin.left + 55)
-        .attr("x", 0 - height / 2)
-        .attr("dy", "1em")
-        .attr("class", "axis-text unchange")
-        .attr("data-axis-name", "skinCancer")
-        .attr("id", "skinCancer")
-        .text("Had Skin Cancer (%)");
-
-    chart
-        .append("text")
-        .attr("transform", "rotate(-90)")
-        .attr("y", 0 - margin.left + 30)
-        .attr("x", 0 - height / 2)
-        .attr("dy", "1em")
-        .attr("class", "axis-text unchange")
-        .attr("data-axis-name", "smoke")
-        .attr("id", "smoke")
-        .text("Currently Smoking (%)");
-
-    // Append x-axis labels
-    chart
-        .append("text")
-        .attr(
-        "transform",
-        "translate(" + width / 2 + " ," + (height + margin.top + 20) + ")"
-        )
-        // This axis label is active by default
-        .attr("class", "axis-text active")
-        .attr("data-axis-name", "bachelorOrHigher")
-        .text("Education level: Bachelor or higher (%)");
-
-    chart
-        .append("text")
-        .attr(
-        "transform",
-        "translate(" + width / 2 + " ," + (height + margin.top + 45) + ")"
-        )
-        // This axis label is inactive by default
-        .attr("class", "axis-text inactive")
-        .attr("data-axis-name", "white")
-        .text("Race: White (%)");
-
-    chart
-        .append("text")
-        .attr(
-        "transform",
-        "translate(" + width / 2 + " ," + (height + margin.top + 70) + ")"
-        )
-        // This axis label is inactive by default
-        .attr("class", "axis-text inactive")
-        .attr("data-axis-name", "foodStamp")
-        .text("Family gets food stamps (%)");
-
-    // Change an axis's status from inactive to active when clicked (if it was inactive)
-    // Change the status of all active axes to inactive otherwise
-    function labelChange(clickedAxis, corrAxis) {
-        d3
-        .selectAll(".axis-text")
-        .filter(".active")
-        // An alternative to .attr("class", <className>) method. Used to toggle classes.
-        .classed("active", false)
-        .classed("inactive", true);
-
-        d3
-        .selectAll(".axis-text")
-        .filter(".change")
-        .classed("change", false)
-        .classed("unchange", true);
-
-        clickedAxis.classed("inactive", false).classed("active", true);
-        corrAxis.classed("unchange", false).classed("change", true);
-    }
-
-    d3.selectAll(".axis-text").on("click", function() {
-        // Assign a variable to current axis
-        var clickedSelection = d3.select(this);
-        // "true" or "false" based on whether the axis is currently selected
-        var isClickedSelectionInactive = clickedSelection.classed("inactive");
-        
-        // console.log("this axis is inactive", isClickedSelectionInactive)
-        // Grab the data-attribute of the axis and assign it to a variable
-        // e.g. if data-axis-name is "poverty," var clickedAxis = "poverty"
-        var clickedAxis = clickedSelection.attr("data-axis-name");
-        
-        // Create corresponding change of y-axis when x-axis is active
-        var corrAxis;
-
-        if (clickedAxis === "bachelorOrHigher") {
-            // x = corrAxis.attr(((d,i) => d.attr("id") === "allTeethRemoved"));
-            corrAxis = d3.select("#allTeethRemoved");
-        }
-        else if (clickedAxis === "white") {
-            corrAxis = d3.select("#skinCancer");
-        }
-        else {
-            corrAxis = d3.select("#smoke");
-        }
-
-        // The onclick events below take place only if the x-axis is inactive
-        // Clicking on an already active axis will therefore do nothing
-        if (isClickedSelectionInactive) {
-        // Assign the clicked axis to the variable currentAxisLabelX
-        currentAxisLabelX = clickedAxis;
-        currentAxisLabelY = corrAxis.attr("data-axis-name");
-        // Call findMinAndMax() to define the min and max domain values.
-        findMinAndMax(currentAxisLabelX, currentAxisLabelY);
-        // Set the domain for the x-axis
-        xLinearScale.domain([xMin, xMax]);
-        yLinearScale.domain([yMin, yMax]);
-
-        // Create a transition effect for the x-axis
-        svg
-            .select(".x-axis")
-            .transition()
-            // .ease(d3.easeElastic)
-            .duration(1800)
-            .call(bottomAxis);
-
-        // Create a transition effect for the y-axis
-        svg
-            .select(".y-axis")
-            .transition()
-            // .ease(d3.easeElastic)
-            .duration(1800)
-            .call(leftAxis);
-
-        // Select all circles to create a transition effect, then relocate its location
-        // based on the new axis that was selected/clicked
-        d3.selectAll("circle").each(function() {
-            d3
-            .select(this)
-            .transition()
-            // .ease(d3.easeBounce)
-            .attr("cx", function(data) {
-                return xLinearScale(+data[currentAxisLabelX]);
-            })
-            .attr("cy", function(data, index) {
-                return yLinearScale(+data[currentAxisLabelY]);
-            })
-            .duration(1800);
+        .classed("axisText", true)
+        .text("Lacks Healthcare (%)");
+  
+      chartGroup.append("text")
+        .attr("transform", `translate(${width / 2}, ${height + margin.top + 30})`)
+        .classed("axisText", true)
+        .text("In Poverty (%)");
+  
+      // Step 6: Initialize tool tip
+      // ==============================
+      var toolTip = d3.tip()
+        .attr("id", "tooltip")
+        .offset([80, -60])
+        .html(function(d) {
+          return (`${data.abbr}<br>poverty: ${d.poverty}<br>healthcare: ${d.healthcare}`);
         });
-
-        // Select all texts on circle to create a transition effect, then relocate its location
-        // based on the new axis that was selected/clicked
-        d3.selectAll(".abbr").each(function() {
-            d3
-            .select(this)
-            .transition()
-            .attr("x", function(data) {
-                return xLinearScale(+data[currentAxisLabelX]);
-            })
-            .attr("y", function(data, index) {
-                return yLinearScale(+data[currentAxisLabelY]);
-            })
-            .duration(1800);
+  
+      // Step 7: Create tooltip in the chart
+      // ==============================
+      chartGroup.call(toolTip);
+  
+      // Step 8: Create event listeners to display and hide the tooltip
+      // ==============================
+      circlesGroup.on("click", function(data) {
+        toolTip.show(data, this);
+      })
+        // onmouseout event
+        .on("mouseout", function(data) {
+          toolTip.hide(data);
         });
-        // Change the status of the axes. See above for more info on this function.
-        labelChange(clickedSelection, corrAxis);
-        }
+  
+    }).catch(function(error) {
+      //console.log(error);
     });
-    });
-}
+  }
+  
+  // When the browser loads, makeResponsive() is called.
+  makeResponsive();
+  
+  // When the browser window is resized, makeResponsive() is called.
+  d3.select(window).on("resize", makeResponsive);
